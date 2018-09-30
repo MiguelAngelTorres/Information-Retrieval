@@ -9,6 +9,11 @@ import org.apache.tika.Tika;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.parser.xml.XMLParser;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.epub.EpubParser;
+import org.apache.tika.parser.microsoft.OfficeParser;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
+import org.apache.tika.parser.odf.OpenDocumentParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.metadata.Metadata;
@@ -18,6 +23,7 @@ import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.ToHTMLContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.Link;
 import java.util.StringTokenizer;
@@ -71,7 +77,7 @@ public class Reader {
 */
 
 
-	public static void processPDF(File file) throws Exception {
+	public static void processPDF(File file) throws Exception {    ///  PDF
 		FileInputStream inputstream = new FileInputStream(file);
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		LinkContentHandler linkhandler = new LinkContentHandler();
@@ -89,10 +95,14 @@ public class Reader {
 
 
 
-	public static void processXML(File file) throws Exception {
+	public static void processXML(File file) throws Exception {     ///   XML
 		FileInputStream inputstream = new FileInputStream(file);		
-		ParseContext pcontext = new ParseContext();
 		ToXMLContentHandler handler = new ToXMLContentHandler();
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler);
+
+		ParseContext pcontext = new ParseContext();		
 		Parser parser = new XMLParser();
 
 		parser.parse(inputstream, handler, met, pcontext);
@@ -100,6 +110,93 @@ public class Reader {
 		// Getting the content of the document
 		auxText = handler.toString();
 	}
+
+
+	public static void processHTML(File file) throws Exception {    ///   HTML
+		FileInputStream inputstream = new FileInputStream(file);		
+		ToHTMLContentHandler handler = new ToHTMLContentHandler();
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler) ;
+
+		ParseContext pcontext = new ParseContext();
+		Parser parser = new HtmlParser();
+
+		parser.parse(inputstream, handler, met, pcontext);
+
+		// Getting the content of the document
+		auxText = handler.toString();
+	}
+
+
+	public static void processEPUB(File file) throws Exception {    ///   EPUB
+		FileInputStream inputstream = new FileInputStream(file);		
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler) ;
+
+		ParseContext pcontext = new ParseContext();
+		Parser parser = new EpubParser();
+
+		parser.parse(inputstream, handler, met, pcontext);
+
+		// Getting the content of the document
+		auxText = handler.toString();
+	}
+
+
+	public static void processMSOFF(File file) throws Exception {   /// WORD 97-2003 AND OLDER
+		FileInputStream inputstream = new FileInputStream(file);		
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler) ;
+
+		ParseContext pcontext = new ParseContext();
+		Parser parser = new OfficeParser();
+
+		parser.parse(inputstream, handler, met, pcontext);
+
+		// Getting the content of the document
+		auxText = handler.toString();
+	}
+
+
+	public static void processOOXML(File file) throws Exception {   /// WORD 2007
+		FileInputStream inputstream = new FileInputStream(file);		
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler) ;
+
+		ParseContext pcontext = new ParseContext();
+		Parser parser = new OOXMLParser();
+
+		parser.parse(inputstream, handler, met, pcontext);
+
+		// Getting the content of the document
+		auxText = handler.toString();
+	}
+
+
+	public static void processOD(File file) throws Exception {   /// OPENOFFICE 
+		FileInputStream inputstream = new FileInputStream(file);		
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		LinkContentHandler linkhandler = new LinkContentHandler();
+
+		TeeContentHandler teeHandler = new TeeContentHandler(linkhandler, handler) ;
+
+		ParseContext pcontext = new ParseContext();
+		Parser parser = new OpenDocumentParser();
+
+		parser.parse(inputstream, handler, met, pcontext);
+
+		// Getting the content of the document
+		auxText = handler.toString();
+	}
+
+
 
 
 
@@ -110,23 +207,44 @@ public class Reader {
 		System.out.println("_____________");
 		System.out.println("_____________");
 
-
+		
 		for (String file : args) {	
 			File f = new File(file);
 			String type = tika.detect(f);
-
+			System.out.println(type);
 			if(type.contains("pdf")){
 
 				processPDF(f);
 
-			}else if(type.contains("")){
+			}else if(type.contains("html")){
+
+				processHTML(f);
+
+			}else if(type.contains("officedocument")){
+
+				processOOXML(f);
+
+			}else if(type.contains("xml")){
 
 				processXML(f);
+
+			}else if(type.contains("epub")){
+
+				processEPUB(f);
+
+			}else if(type.contains("word")){
+
+				processMSOFF(f);
+
+			}else if(type.contains("opendocument")){
+
+				processOD(f);
 
 			}else{
 
 				InputStream is = new FileInputStream(file);
 				auxText = tika.parseToString(f);
+
 			}
 
 
