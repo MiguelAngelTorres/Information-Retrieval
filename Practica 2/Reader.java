@@ -1,10 +1,12 @@
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+
 import org.apache.tika.Tika;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.pdf.PDFParser;
@@ -40,6 +42,7 @@ public class Reader {
 	public static String auxText;
 	public static Metadata met = new Metadata();
 	public static List<Link> links = new LinkedList<Link>();
+	public static ArrayList<String> files = new ArrayList<String> ();
 
 
 	public static String identifyLanguage() throws IOException {
@@ -49,32 +52,14 @@ public class Reader {
 	}
 
 
-	public static void printMap(HashMap mp) {
-		Iterator it = mp.entrySet().iterator();
+	public static void printList(List l) {
+		Iterator it = l.iterator();
 		while (it.hasNext()) {
 			HashMap.Entry pair = (HashMap.Entry)it.next();
-			System.out.println(pair.getKey() + " = " + pair.getValue());
+			System.out.println(pair.getKey() + " = " + (-(Integer) pair.getValue()));
 		}
 	}
 
-
-
-
-/*
-		Parser parser = new AutoDetectParser();
-		Metadata metadata = new Metadata();
-
-
-
-		InputStream stream = new FileInputStream(file);
-		parser.parse(stream, handler, metadata,new ParseContext());
-
-		List<Link> lista  = new LinkedList<Link>();
-		lista = handler.getLinks();
-		for (Link enlace : lista) {
-		System.out.println("lin k:"+enlace.toString());
-
-*/
 
 
 	public static void processPDF(File file) throws Exception {    ///  PDF
@@ -91,6 +76,9 @@ public class Reader {
 			
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
@@ -105,10 +93,13 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();		
 		Parser parser = new XMLParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
@@ -122,10 +113,13 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();
 		Parser parser = new HtmlParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
@@ -139,14 +133,17 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();
 		Parser parser = new EpubParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
-	public static void processMSOFF(File file) throws Exception {   /// WORD 97-2003 AND OLDER
+	public static void processMSOFF(File file) throws Exception {   /// WORD 97-2003
 		FileInputStream inputstream = new FileInputStream(file);		
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		LinkContentHandler linkhandler = new LinkContentHandler();
@@ -156,10 +153,13 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();
 		Parser parser = new OfficeParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
@@ -173,10 +173,13 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();
 		Parser parser = new OOXMLParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
@@ -190,15 +193,33 @@ public class Reader {
 		ParseContext pcontext = new ParseContext();
 		Parser parser = new OpenDocumentParser();
 
-		parser.parse(inputstream, handler, met, pcontext);
+		parser.parse(inputstream, teeHandler, met, pcontext);
 
 		// Getting the content of the document
 		auxText = handler.toString();
+
+		// Getting links of the document
+		links = linkhandler.getLinks();
 	}
 
 
 
+	public static void getFilesOf(String dir){
+		File folder = new File(dir);
+		if(!folder.isFile()){
+			File[] listOfFiles = folder.listFiles();
 
+			for (int i = 0; i < listOfFiles.length; i++) {
+				if (listOfFiles[i].isFile()) {
+					files.add(dir + "/" + listOfFiles[i].getName());
+				} else if (listOfFiles[i].isDirectory()) {
+					getFilesOf(dir + "/" + listOfFiles[i].getName());
+				}
+			}
+		}else{
+			files.add(dir);
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		// Create Tika instance
@@ -207,11 +228,15 @@ public class Reader {
 		System.out.println("_____________");
 		System.out.println("_____________");
 
-		
-		for (String file : args) {	
+		// Write into a list every file in the directory given
+		getFilesOf(args[0]);
+
+		// Read every file in the list
+		for (String file : files) {	
+			met = new Metadata();
 			File f = new File(file);
 			String type = tika.detect(f);
-			System.out.println(type);
+			System.out.println(f.getName());
 			if(type.contains("pdf")){
 
 				processPDF(f);
@@ -247,11 +272,12 @@ public class Reader {
 
 			}
 
-
+			System.out.println("\n\n\n Archivo encontrado \n");
 
 			System.out.println("\n Metadatos del archivo. \n");
 			System.out.println(f.getAbsolutePath());
 			System.out.println(file +":::"+type);
+			System.out.println("Content-Encoding:::"+met.get("Content-Encoding"));
 			System.out.println("lenguaje::"+identifyLanguage());
 
 			// Show content text
@@ -263,11 +289,19 @@ public class Reader {
 
 
 			FrecuenCounter freCount = new FrecuenCounter(auxText);
-			HashMap<String,Integer> frec = freCount.getWordFrecuency();
-			//printMap(frec);
+			List frec = freCount.getWordFrecuency();
+			//printList(frec);
 
 
-   
+			// Print links
+			System.out.println("\n Links encontrados \n");
+   		for(Link link : links){
+				System.out.println(link.getText());
+			}
+
+
+			Plotter plot = new Plotter();
+			//plot.plot(frec, file);
 		}
 	}
 }
