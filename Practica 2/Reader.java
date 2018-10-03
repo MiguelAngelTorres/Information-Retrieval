@@ -290,7 +290,7 @@ public class Reader {
 
 			FrecuenCounter freCount = new FrecuenCounter(auxText);
 			List frec = freCount.getWordFrecuency();
-			//printList(frec);
+			printList(frec);
 
 
 			// Print links
@@ -301,7 +301,7 @@ public class Reader {
 
 
 			Plotter plot = new Plotter();
-			//plot.plot(frec, file);
+			plot.plot(frec, file);
 		}
 	}
 }
