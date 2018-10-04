@@ -301,7 +301,7 @@ public class Reader {
 
 
 			Plotter plot = new Plotter();
-			plot.plot(frec, file);
+			plot.buildPlot(frec, file);
 		}
 	}
 }
