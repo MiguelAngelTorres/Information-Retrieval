@@ -1,6 +1,9 @@
 # Information-Retrieval
 Work for the subject Information-Retrieval (UGR)
 
+## Práctica 1
+Look for information about some topics we will work with in the subject. Report made with LaTex.
+
 ## Práctica 2 (Tika)
 Read the files in a directory given and extract the text from the interesting files (PDF, HTML, XML, EPUB, WORD, EXCELL). Made with Tika (Java). This module uses gnuplot(Linux) for word frecuency plots called from Javaplot-0.5.0, which must be downloaded (https://sourceforge.net/projects/gnujavaplot/) and place on the directory where .sh file is placed. In addition, tika-app-1.18.jar has been used, you can download it from https://tika.apache.org/download.html .
 
