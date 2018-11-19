@@ -8,11 +8,15 @@ public class Reader{
 
 	Reader(){}
 
-	public void read(String path, String type, Indexer index) throws IOException {
-		BufferedReader buffer = null;
+	public void read(String path, String type, Indexer index) throws IOException {		
+		BufferedReader buffer = new BufferedReader(new FileReader( path ));
+
+		if(type == "Tags"){
+			readTags(buffer, index);
+		}
+
 		String line;
 		String accumline = "";
-		buffer = new BufferedReader(new FileReader( path ));
 
 		buffer.readLine();
 		while ((line = buffer.readLine()) != null) {
@@ -21,8 +25,11 @@ public class Reader{
 				if(line.equals("\"") ){
 					//System.out.println(accumline);
 					//System.out.println("________________");
-					index.addQuestion(splitInstance(accumline));
-				
+					if(type == "Questions"){
+						index.addQuestion(splitInstance(accumline, 5));
+					} else if(type == "Answers"){
+						index.addAnswer(splitInstance(accumline, 6));
+					}
 					accumline = "";
 				}else{
 					accumline += line;
@@ -32,26 +39,31 @@ public class Reader{
 	}
 
 
-	public static String[] splitInstance(String instance) {
-		String[] res = new String[6]; 
+	public static String[] splitInstance(String instance, Integer fields) {
+		String[] res = new String[fields+1]; 
 		String lastField = "";
 		if (instance != null) {
 			String[] splitData = instance.split(",");
-			for (int i = 5; i < splitData.length; i++) {
+			for (int i = fields; i < splitData.length; i++) {
 				lastField+=splitData[i];
 			}
-			//System.out.println(splitData[0]);
-			//System.out.println(lastField + "\n\n");
-			
-			res[0] = splitData[0];
-			res[1] = splitData[1];
-			res[2] = splitData[2];
-			res[3] = splitData[3];
-			res[4] = splitData[4];
-			res[5] = lastField;
+			for(int j = 0; j < fields; j++){
+				res[j] = splitData[j];
+			}
+			res[fields] = lastField;
 
 		}
 		return res;
 	}
 
+
+	public void readTags(BufferedReader buffer, Indexer index) throws IOException {
+		String line;
+		String accumline = "";
+
+		buffer.readLine();
+		while ((line = buffer.readLine()) != null) {
+			index.addTag(line.split(","));
+		}
+	}
 }
