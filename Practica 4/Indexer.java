@@ -3,6 +3,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.nio.file.Paths;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -18,7 +21,9 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.Field.Store;
+
 
 public class Indexer{
 	String indexPath = "./index";
@@ -76,15 +81,12 @@ public class Indexer{
 
 
 	public void indexDocs (){
-		List<String[]> questions = null;
 		try{
-			questions = reader.read(docPath[0],"Questions");
+			reader.read(docPath[0],"Questions",this);
 		}catch(IOException e){
 			System.out.println(e.getMessage());
 		}
-		System.out.println(questions);
-
-		/*indexQuestions(cadena);
+		/*
 		cadena = reader.read(docPath[1],"Answers");
 		indexQuestions(cadena);
 		cadena = reader.read(docPath[2],"Tags");
@@ -92,24 +94,26 @@ public class Indexer{
 	}
 
 
-	public void indexQuestions(String cadena){
+	public void addQuestion(String[] question){
 		Document doc = new Document ();
-			
-		// Extract ID from String
-		Integer start = 0;
-		Integer end = 0; 
-		String aux = cadena.substring (start,end);
-		Integer valor = Integer.decode(aux);
-		// Store field on Lucene doc
+			 
+		Integer valor = Integer.decode(question[0]);
+		// Store idQuestion on Lucene doc
 		doc.add ( new IntPoint("ID",valor));
 		doc.add ( new StoredField("ID", valor));
 
-		// Extract Body from string
-		start = 0;
-		end = 0;
-		String body = cadena.substring(start,end);
-		// Store field on Lucene doc
-		doc.add(new TextField( "Body", body, Store.YES));
+		// Store body on Lucene doc
+		doc.add(new TextField( "Body", question[5], Store.YES));
+		
+		// Store date		
+		try{
+			System.out.println(question[2]);
+			Date date = new SimpleDateFormat("yyyy−MM−dd'T'HH:mm:s s'Z'").parse(question[2]);
+			doc.add( new LongPoint("Date",date.getTime()));
+		} catch( ParseException e) {
+			System.out.print(e.getMessage());
+		}
+
 
 
 		// Insert doc in Index
@@ -119,9 +123,6 @@ public class Indexer{
 			System.out.println("Error adding document to index.");
 		}	
 
-
-		// If already exist, update with:
-		// writer.updateDocument(new Term("ID", valor.toString()),doc);
 	}
 	public void indexAnswers(String cadena){
 

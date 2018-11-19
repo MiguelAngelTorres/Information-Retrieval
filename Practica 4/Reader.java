@@ -1,44 +1,57 @@
 import java.util.List;
 import java.util.LinkedList;
-import java.io.FileReader;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Scanner;
-import java.io.File;
-
-//import org.jsoup.nodes.Document;
-//import org.jsoup.Jsoup;
-import com.opencsv.CSVReader;
+import java.io.FileReader;
 
 public class Reader{
+
 	Reader(){}
 
-	public List<String[]> read(String path, String type) throws IOException {
-		List<String[]> res = new LinkedList<String[]> ();
-		CSVReader csvReader = new CSVReader(new FileReader(path), ',');
-		Scanner scanner = new Scanner(new File(path));
-		scanner.useDelimiter(",");
-		String[] aux;
+	public void read(String path, String type, Indexer index) throws IOException {
+		BufferedReader buffer = null;
+		String line;
+		String accumline = "";
+		buffer = new BufferedReader(new FileReader( path ));
 
-
-		if(type == "Questions"){
-			//res = csvReader.readAll() ;		
-			
-			
-			while((aux = csvReader.readNext()) != null){
-				//System.out.println("_________________________________");
-				//System.out.println(aux[0]);
-				res.add(aux);
+		buffer.readLine();
+		while ((line = buffer.readLine()) != null) {
+			//System.out.println(line + "\n\n");
+			if(line.length() != 0){
+				if(line.equals("\"") ){
+					//System.out.println(accumline);
+					//System.out.println("________________");
+					index.addQuestion(splitInstance(accumline));
+				
+					accumline = "";
+				}else{
+					accumline += line;
+				}
 			}
+		}
+	}
 
-			/*while(scanner.hasNext()){
-				System.out.print(scanner.next()+"|-|-|");
-			}*/
-		}else if(type == "Answers"){
+
+	public static String[] splitInstance(String instance) {
+		String[] res = new String[6]; 
+		String lastField = "";
+		if (instance != null) {
+			String[] splitData = instance.split(",");
+			for (int i = 5; i < splitData.length; i++) {
+				lastField+=splitData[i];
+			}
+			//System.out.println(splitData[0]);
+			//System.out.println(lastField + "\n\n");
 			
-		}else{
+			res[0] = splitData[0];
+			res[1] = splitData[1];
+			res[2] = splitData[2];
+			res[3] = splitData[3];
+			res[4] = splitData[4];
+			res[5] = lastField;
 
 		}
-
 		return res;
 	}
+
 }
