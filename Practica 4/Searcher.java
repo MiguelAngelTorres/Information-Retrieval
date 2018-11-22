@@ -10,6 +10,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.TermQuery;
@@ -36,14 +37,46 @@ public class Searcher{
 		order.clear();
 	}
 
-	public void addSearchByTitle(String[] words, BooleanClause.Occur oblig) throws IOException {
+	public void addSearchByTitle(String[] words, BooleanClause.Occur oblig, boolean phrase) throws IOException {
 		Query q;
 		BooleanClause bc;
-	
-		for(String word : words){
-			q = new TermQuery(new Term("Title", word));
-			bc = new BooleanClause(q, oblig);
+		if(phrase){
+			PhraseQuery.Builder builder = new PhraseQuery.Builder();
+			int i = 0;
+			for(String word : words){
+				builder.add(new Term("Title", word),i);
+				i++;
+			}
+			PhraseQuery pq = builder.build();
+			bc = new BooleanClause(pq, oblig);
 			clauses.add(bc);
+		}else{
+			for(String word : words){
+				q = new TermQuery(new Term("Title", word));
+				bc = new BooleanClause(q, oblig);
+				clauses.add(bc);
+			}
+		}
+	}
+		public void addSearchByBody(String[] words, BooleanClause.Occur oblig, boolean phrase) throws IOException {
+		Query q;
+		BooleanClause bc;
+		if(phrase){
+			PhraseQuery.Builder builder = new PhraseQuery.Builder();
+			int i = 0;
+			for(String word : words){
+				builder.add(new Term("Body", word),i);
+				i++;
+			}
+			PhraseQuery pq = builder.build();
+			bc = new BooleanClause(pq, oblig);
+			clauses.add(bc);
+		}else{	
+			for(String word : words){
+				q = new TermQuery(new Term("Body", word));
+				bc = new BooleanClause(q, oblig);
+				clauses.add(bc);
+			}
 		}
 	}
 
