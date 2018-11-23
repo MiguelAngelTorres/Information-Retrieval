@@ -13,6 +13,9 @@ public class SearchInterface{
 	public ArrayList<String> clauses;
 	public ArrayList<String> filters;
 	public ArrayList<String> order;
+	public ArrayList<String> lastclauses;
+	public ArrayList<String> lastfilters;
+	public ArrayList<String> lastorder;
 	public Integer maxHits;
 	public boolean firstSearch;
 
@@ -28,6 +31,11 @@ public class SearchInterface{
 			System.out.println(e.getMessage());
 		}
 		clauses = new ArrayList<String>();
+		filters = new ArrayList<String>();
+		order = new ArrayList<String>();
+		lastclauses = new ArrayList<String>();
+		lastfilters = new ArrayList<String>();
+		lastorder = new ArrayList<String>();
 		maxHits = 5;
 		firstSearch = true;
 	}
@@ -37,6 +45,16 @@ public class SearchInterface{
 		clauses.clear();
 		filters.clear();
 		order.clear();
+	}
+
+	public void redoSearch(){
+		searcher.redoSearch();
+		clauses.addAll(lastclauses);
+		filters.addAll(lastfilters);
+		order.addAll(lastorder);
+		lastclauses.clear();
+		lastorder.clear();
+		lastfilters.clear();
 	}
 
 	// words cannot be empty
@@ -119,7 +137,16 @@ public class SearchInterface{
 
 	public void executeSearch(){
 		try{
+			lastclauses.addAll(clauses);
+			lastfilters.addAll(filters);
+			lastorder = order;
+			clauses.clear();
+			filters.clear();
+			order.clear();
 			searcher.executeSearch(maxHits);
+			if(searchAgain()){
+				requestClause(false);
+			}
 		} catch( IOException e ){
 			System.out.println("Error while executing search: " + e.getMessage());
 		}
@@ -133,7 +160,6 @@ public class SearchInterface{
 ///////////////// ----------------------   INTEFACE METHODS  ---------------------------- /////////
 
 
-
 	public void chargedClauses(){
 		System.out.println("\nThe added restriction are:");
 		for(String st : clauses){
@@ -141,26 +167,52 @@ public class SearchInterface{
 		}
 	}
 
-	public void requestClause(){
+	public boolean searchAgain(){
+		Scanner input = new Scanner(System.in);
+
+		System.out.println("\nWould you like to make a new search?\n" +
+									"  [1] - YES\n" +
+									"  [2] - NO\n"
+		);
+
+		int res = input.nextInt();
+		if(res==1){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	public void requestClause(boolean first){
 		Scanner input = new Scanner(System.in);
 		System.out.println("\nPlease, input your's number choice:\n" +
 									"  [1] - Execute the actual search\n" +
 									"  [2] - Watch the actual restrictions\n" +
 									"  [3] - Add word restriction"
 		);
+		if(!first){
+			System.out.println("  [4] - Charge last restrictions");
+		}
 		int res = input.nextInt();
 
 		if(res == 1){
+			if(!first){
+				resetSearch();
+			}
 			executeSearch();
 		}else if(res == 2){
 			chargedClauses();
-			requestClause();
+			requestClause(first);
 		}else if(res == 3){
+			resetSearch();
 			requestTextField();
-			requestClause();
+			requestClause(first);
+		}else if(res == 4 && !first){
+			redoSearch();
+			requestClause(true);
 		}else{
 			System.out.println("This is embarrasing, it seems you typed wrongly.");
-			requestClause();
+			requestClause(first);
 		}
 	}
 
@@ -258,7 +310,7 @@ public class SearchInterface{
 		SearchInterface In = new SearchInterface(args[0]);
 
 		
-		In.requestClause();
+		In.requestClause(true);
 
 
 	}

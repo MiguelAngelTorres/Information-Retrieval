@@ -23,6 +23,8 @@ public class Searcher{
 	IndexSearcher searcher;
 	public ArrayList<BooleanClause> clauses;
 	public ArrayList<SortField> order;	
+	public ArrayList<BooleanClause> lastclauses;
+	public ArrayList<SortField> lastorder;	
 	
 	Searcher(String path) throws IOException {
 		Directory dir = FSDirectory.open(Paths.get(path));
@@ -30,11 +32,20 @@ public class Searcher{
 		searcher = new IndexSearcher(reader);	
 		clauses = new ArrayList<BooleanClause>();
 		order = new ArrayList<SortField>();
+		lastclauses = new ArrayList<BooleanClause>();
+		lastorder = new ArrayList<SortField>();
 	}
 
 	public void resetSearch(){
 		clauses.clear();
 		order.clear();
+	}
+
+	public void redoSearch(){
+		clauses.addAll(lastclauses);
+		order.addAll(lastorder);
+		lastclauses.clear();
+		lastorder.clear();
 	}
 
 	public void addSearchByTitle(String[] words, BooleanClause.Occur oblig, boolean phrase) throws IOException {
@@ -90,12 +101,15 @@ public class Searcher{
 			BooleanClause bc = new BooleanClause(q, BooleanClause.Occur.SHOULD);
 			clauses.add(bc);
 		}
-
 		for(BooleanClause bc : clauses){
 			bqbuilder.add(bc);
 		}
 		bq = bqbuilder.build();
 
+		lastclauses.addAll(clauses);
+		lastorder.addAll(order);
+		clauses.clear();
+		order.clear();
 		TopDocs tdocs = searcher.search(bq,maxres);
 		printDocs(tdocs);
 
