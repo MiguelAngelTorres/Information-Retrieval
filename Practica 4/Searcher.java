@@ -8,6 +8,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.PhraseQuery;
@@ -69,7 +70,7 @@ public class Searcher{
 			}
 		}
 	}
-		public void addSearchByBody(String[] words, BooleanClause.Occur oblig, boolean phrase) throws IOException {
+	public void addSearchByBody(String[] words, BooleanClause.Occur oblig, boolean phrase) throws IOException {
 		Query q;
 		BooleanClause bc;
 		if(phrase){
@@ -89,6 +90,13 @@ public class Searcher{
 				clauses.add(bc);
 			}
 		}
+	}
+
+	
+	public void addSearchByVotes(int min, int max){
+		Query q = IntPoint.newRangeQuery("Mark", min, max);
+		BooleanClause bc = new BooleanClause(q, BooleanClause.Occur.MUST);
+		clauses.add(bc);
 	}
 
 	// if no clauses are given, all the questions are returned

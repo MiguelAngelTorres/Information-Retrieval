@@ -59,14 +59,14 @@ public class Indexer{
 
 	public static Map<String, Analyzer> analyzerSetQuestion(){
 		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
-
+		res.put("Title", new WhitespaceAnalyzer());
 
 
 		return res;
 	}
 	public static Map<String, Analyzer> analyzerSetAnswer(){
 		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
-		res.put("Body", new StandardAnalyzer());
+
 		return res;
 	}
 
@@ -139,7 +139,6 @@ public class Indexer{
 
 		// Store mark
 		doc.add(new IntPoint("Mark", Integer.decode(question[3])));
-		System.out.println(Integer.decode(question[3]));
 		// Store title
 		doc.add(new TextField( "Title", question[4], Store.YES));
 

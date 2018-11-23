@@ -64,9 +64,9 @@ public class SearchInterface{
 			searcher.addSearchByTitle(words,BooleanClause.Occur.MUST, phrase);
 			if(fields != ""){
 				if(phrase){
-					clause += " [";
+					clause += " [ ";
 					for(String word : words){
-						clause +=  word;
+						clause += word + " ";
 		 			}
 					clause += "]";
 				}else{
@@ -81,9 +81,9 @@ public class SearchInterface{
 			searcher.addSearchByTitle(words,BooleanClause.Occur.SHOULD, phrase);
 			if(fields != ""){
 				if(phrase){
-					clause += " [";
+					clause += " [ ";
 					for(String word : words){
-						clause += word;
+						clause += word + " ";
 		 			}
 					clause += "]";
 				}else{
@@ -102,9 +102,9 @@ public class SearchInterface{
 			searcher.addSearchByBody(words,BooleanClause.Occur.MUST, phrase);
 			if(fields != ""){
 				if(phrase){
-					clause += " [";
+					clause += " [ ";
 					for(String word : words){
-						clause += word;
+						clause += word + " ";
 		 			}
 					clause += "]";
 				}else{
@@ -119,9 +119,9 @@ public class SearchInterface{
 			searcher.addSearchByBody(words,BooleanClause.Occur.SHOULD, phrase);
 			if(fields != ""){
 				if(phrase){
-					clause += " [";
+					clause += " [ ";
 					for(String word : words){
-						clause += word;
+						clause += word + " ";
 		 			}
 					clause += "]";
 				}else{
@@ -133,6 +133,19 @@ public class SearchInterface{
 				clauses.add(clause);
 			}
 		}
+	}
+
+	public void addSearchByVotes(int min, int max, int mode){
+		String clause = "The question must have ";
+		if(mode == 1){
+			clause += "more than " + min + " votes."; 
+		}else if(mode == 2){
+			clause += "less than " + max + " votes.";
+		}else{
+			clause += "between " + min + " and " + max + " votes.";
+		}
+		clauses.add(clause);
+		searcher.addSearchByVotes(min,max);
 	}
 
 	public void executeSearch(){
@@ -188,10 +201,11 @@ public class SearchInterface{
 		System.out.println("\nPlease, input your's number choice:\n" +
 									"  [1] - Execute the actual search\n" +
 									"  [2] - Watch the actual restrictions\n" +
-									"  [3] - Add word restriction"
+									"  [3] - Add word restriction\n" +
+									"  [4] - Add votes restriction\n"
 		);
 		if(!first){
-			System.out.println("  [4] - Charge last restrictions");
+			System.out.println("  [5] - Charge last restrictions");
 		}
 		int res = input.nextInt();
 
@@ -204,10 +218,18 @@ public class SearchInterface{
 			chargedClauses();
 			requestClause(first);
 		}else if(res == 3){
-			resetSearch();
+			if(!first){
+				resetSearch();
+			}
 			requestTextField();
 			requestClause(first);
-		}else if(res == 4 && !first){
+		}else if(res == 4){
+			if(!first){
+				resetSearch();
+			}
+			requestRangeModeVotes();
+			requestClause(first);
+		}else if(res == 5 && !first){
 			redoSearch();
 			requestClause(true);
 		}else{
@@ -300,8 +322,53 @@ public class SearchInterface{
 
 	}
 
+	public void requestRangeModeVotes(){
+		Scanner input = new Scanner(System.in);
+		System.out.println("\nSelect your choice:\n" +
+									"  [1] - Minimum of votes.\n" +
+									"  [2] - Maximum of votes.\n" +
+									"  [3] - Between a range of votes."
+		);
+		int res = input.nextInt();
 
+		if(res == 1 || res == 2 || res == 3){
+			requestRange(res);
+		}else{
+			System.out.println("This is embarrasing, it seems you typed wrongly.");
+			requestTextField();
+		}
+	}
 
+	public void requestRange(int mode){
+		Scanner input = new Scanner(System.in);
+
+		if(mode == 1){
+			System.out.println("\nWrite the minimum:\n");
+			int res = input.nextInt();
+			addSearchByVotes(res,999999,1);
+		}else if(mode == 2){
+			System.out.println("\nWrite the maximum:\n");
+			int res = input.nextInt();
+			addSearchByVotes(-999999,res,2);
+		}else{
+			boolean condition = true;
+			while(condition){
+				System.out.println("\nWrite the minimum and maximum separated with a whitespace:\n");
+				String res = input.nextLine();
+				String[] splited = res.split("\\s+");
+				if(splited.length == 2){
+					int res1 = Integer.decode(splited[0]);
+					int res2 = Integer.decode(splited[1]);
+					if(res1 < res2){
+						addSearchByVotes(res1,res2,3);
+					}else{
+						addSearchByVotes(res2,res1,3);
+					}
+				condition = false;
+				}
+			}
+		}
+	}
 
 
 ///////////////// -----------------------   MAIN METHOD  ---------------------------- ///////////
