@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.lang.Long;
 
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
@@ -19,6 +21,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.LongPoint;
@@ -60,6 +64,7 @@ public class Indexer{
 	public static Map<String, Analyzer> analyzerSetQuestion(){
 		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
 		res.put("Title", new WhitespaceAnalyzer());
+		res.put("Mark_string", new WhitespaceAnalyzer());
 
 
 		return res;
@@ -130,15 +135,15 @@ public class Indexer{
 		doc.add(new TextField( "Body", question[5], Store.YES));
 		
 		// Store date		
-		try{
-			Date date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(question[2]);
-			doc.add( new LongPoint("Date",date.getTime()));
-		} catch( ParseException e) {
-			System.out.print(e.getMessage());
-		}
+
+		//Date date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(question[2]);
+		//doc.add( new LongPoint("Date",date.getTime()));
+		doc.add(new SortedDocValuesField("Date", new BytesRef(question[2])));
+
 
 		// Store mark
 		doc.add(new IntPoint("Mark", Integer.decode(question[3])));
+		doc.add(new NumericDocValuesField("Mark_sort", Long.parseLong(question[3])));
 		// Store title
 		doc.add(new TextField( "Title", question[4], Store.YES));
 

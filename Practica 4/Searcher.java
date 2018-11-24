@@ -19,6 +19,8 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.TopFieldDocs;
+import org.apache.lucene.search.Sort;
 
 public class Searcher{
 	IndexSearcher searcher;
@@ -99,6 +101,21 @@ public class Searcher{
 		clauses.add(bc);
 	}
 
+
+	public void addOrder(int mode, boolean isDescendent){
+		SortField sf;
+
+		if(mode==1){
+			sf = new SortField("Mark_sort",SortField.Type.LONG,isDescendent);
+			order.add(sf);
+		}else if(mode==2){
+			sf = new SortField("Date",SortField.Type.STRING,isDescendent);
+			order.add(sf);
+		}else{
+
+		}	
+	}
+
 	// if no clauses are given, all the questions are returned
 	public void executeSearch(int maxres) throws IOException {
 		BooleanQuery bq;
@@ -114,16 +131,23 @@ public class Searcher{
 		}
 		bq = bqbuilder.build();
 
+		order.add(SortField.FIELD_SCORE);
+		SortField[] orderArray = new SortField[order.size()];
+		for(int i=0; i<order.size(); i++)
+		orderArray[i] = order.get(i);
+		Sort s = new Sort(orderArray);
+
+
 		lastclauses.addAll(clauses);
 		lastorder.addAll(order);
 		clauses.clear();
 		order.clear();
-		TopDocs tdocs = searcher.search(bq,maxres);
+		TopFieldDocs tdocs = searcher.search(bq,maxres,s);
 		printDocs(tdocs);
 
 	}
 
-	public void printDocs(TopDocs docs) throws IOException {
+	public void printDocs(TopFieldDocs docs) throws IOException {
 		System.out.println(docs.totalHits + " resultados relacionados.\n");
 
 		for(ScoreDoc sd : docs.scoreDocs){

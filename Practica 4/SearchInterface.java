@@ -148,6 +148,27 @@ public class SearchInterface{
 		searcher.addSearchByVotes(min,max);
 	}
 
+
+	public void addOrder(int mode, boolean descendent){
+		String clause = "Order the questions by ";
+
+		if(descendent){
+			clause += "descendent ";			
+		}else{
+			clause += "ascendent ";
+		}
+		
+		if(mode == 1){
+			clause += "number of votes."; 
+		}else if(mode == 2){
+			clause += "publication date.";
+		}else{
+			clause += "number of responses.";
+		}
+		order.add(clause);
+		searcher.addOrder(mode,ascendent);
+	}
+
 	public void executeSearch(){
 		try{
 			lastclauses.addAll(clauses);
@@ -178,6 +199,9 @@ public class SearchInterface{
 		for(String st : clauses){
 			System.out.println(" - " + st);
 		}
+		for(String st : order){
+			System.out.println(" - " + st);
+		}
 	}
 
 	public boolean searchAgain(){
@@ -188,8 +212,8 @@ public class SearchInterface{
 									"  [2] - NO\n"
 		);
 
-		int res = input.nextInt();
-		if(res==1){
+		String res = input.nextLine();
+		if(res.equals("1") || res.equals("y")){
 			return true;
 		}else{
 			return false;
@@ -201,11 +225,12 @@ public class SearchInterface{
 		System.out.println("\nPlease, input your's number choice:\n" +
 									"  [1] - Execute the actual search\n" +
 									"  [2] - Watch the actual restrictions\n" +
-									"  [3] - Add word restriction\n" +
-									"  [4] - Add votes restriction\n"
+									"  [3] - Add a word restriction\n" +
+									"  [4] - Add a range of votes\n" +
+									"  [5] - Add an order of relevance"
 		);
 		if(!first){
-			System.out.println("  [5] - Charge last restrictions");
+			System.out.println("  [6] - Charge last restrictions");
 		}
 		int res = input.nextInt();
 
@@ -229,7 +254,13 @@ public class SearchInterface{
 			}
 			requestRangeModeVotes();
 			requestClause(first);
-		}else if(res == 5 && !first){
+		}else if(res == 5){
+			if(!first){
+				resetSearch();
+			}
+			requestOrderType();
+			requestClause(first);
+		}else if(res == 6 && !first){
 			redoSearch();
 			requestClause(true);
 		}else{
@@ -368,6 +399,41 @@ public class SearchInterface{
 				}
 			}
 		}
+	}
+	
+
+	public void requestOrderType(){
+		Scanner input = new Scanner(System.in);
+		System.out.println("\nSelect the field for order:\n" +
+									"  [1] - Order by vote puntuation.\n" +
+									"  [2] - Order by publication date.\n" +
+									"  [3] - Order by number of answers (todo section)."
+		);
+		int res = input.nextInt();
+
+		if(res == 1 || res == 2 || res == 3){
+			requestOrderSide(res);
+		}else{
+			System.out.println("This is embarrasing, it seems you typed wrongly.");
+			requestTextField();
+		}
+	}
+	
+	public void requestOrderSide(int mode){
+		Scanner input = new Scanner(System.in);
+		System.out.println("\nChoose ascendent or descendent order:\n" +
+										"  [1] - Ascendent order.\n" +
+										"  [2] - Descendent order"
+		);
+		int res = input.nextInt();
+		if(res == 1){
+			addOrder(mode, false);
+		}else if(res==2){
+			addOrder(mode, true);
+		}else{
+			System.out.println("This is embarrasing, it seems you typed wrongly.");
+			requestOrderSide(mode);
+		}		
 	}
 
 
