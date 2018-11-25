@@ -162,11 +162,13 @@ public class SearchInterface{
 			clause += "number of votes."; 
 		}else if(mode == 2){
 			clause += "publication date.";
-		}else{
+		}else if(mode == 3){
 			clause += "number of responses.";
+		}else{
+			clause += "top votes in its answers.";
 		}
 		order.add(clause);
-		searcher.addOrder(mode,ascendent);
+		searcher.addOrder(mode,descendent);
 	}
 
 	public void executeSearch(){
@@ -223,14 +225,15 @@ public class SearchInterface{
 	public void requestClause(boolean first){
 		Scanner input = new Scanner(System.in);
 		System.out.println("\nPlease, input your's number choice:\n" +
-									"  [1] - Execute the actual search\n" +
-									"  [2] - Watch the actual restrictions\n" +
-									"  [3] - Add a word restriction\n" +
-									"  [4] - Add a range of votes\n" +
-									"  [5] - Add an order of relevance"
+									"  [1] - Execute the actual search.\n" +
+									"  [2] - Watch the actual restrictions.\n" +
+									"  [3] - Add a word restriction.\n" +
+									"  [4] - Add a range of votes.\n" +
+									"  [5] - Add an order of relevance.\n"+
+									"  [6] - Add an answer restriction."
 		);
 		if(!first){
-			System.out.println("  [6] - Charge last restrictions");
+			System.out.println("  [7] - Charge last restrictions.");
 		}
 		int res = input.nextInt();
 
@@ -260,7 +263,13 @@ public class SearchInterface{
 			}
 			requestOrderType();
 			requestClause(first);
-		}else if(res == 6 && !first){
+		}else if(res == 6){
+			if(!first){
+				resetSearch();
+			}
+			requestAnswerRestriction();
+			requestClause(first);
+		}else if(res == 7 && !first){
 			redoSearch();
 			requestClause(true);
 		}else{
@@ -407,7 +416,7 @@ public class SearchInterface{
 		System.out.println("\nSelect the field for order:\n" +
 									"  [1] - Order by vote puntuation.\n" +
 									"  [2] - Order by publication date.\n" +
-									"  [3] - Order by number of answers (todo section)."
+									"  [3] - Order by number of answers."
 		);
 		int res = input.nextInt();
 
@@ -423,7 +432,7 @@ public class SearchInterface{
 		Scanner input = new Scanner(System.in);
 		System.out.println("\nChoose ascendent or descendent order:\n" +
 										"  [1] - Ascendent order.\n" +
-										"  [2] - Descendent order"
+										"  [2] - Descendent order."
 		);
 		int res = input.nextInt();
 		if(res == 1){
@@ -434,6 +443,29 @@ public class SearchInterface{
 			System.out.println("This is embarrasing, it seems you typed wrongly.");
 			requestOrderSide(mode);
 		}		
+	}
+
+	public void requestAnswerRestriction(){
+		Scanner input = new Scanner(System.in);
+		System.out.println("\nSelect the restriction type on the answer:\n" +
+									"  [1] - Show only with or without answer.\n" +
+									"  [2] - Order by the top votes of the answer.\n"
+		);
+		int res = input.nextInt();
+
+		if(res==1){
+			requestIsAnswered();
+		}else if(res == 2){
+			requestOrderSide(4);
+		}else{
+			System.out.println("This is embarrasing, it seems you typed wrongly.");
+			requestTextField();
+		}
+	}
+
+	public void requestIsAnswered(){
+
+
 	}
 
 

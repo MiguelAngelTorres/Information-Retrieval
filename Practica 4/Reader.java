@@ -26,7 +26,11 @@ public class Reader{
 					//System.out.println(accumline);
 					//System.out.println("________________");
 					if(type == "Questions"){
-						index.addQuestion(splitInstance(accumline, 5));
+						try{
+							index.addQuestion(splitInstance(accumline, 5));
+						}catch( IOException e ){
+							System.out.println("Error while saving a question: " + e.getMessage());
+						}
 					} else if(type == "Answers"){
 						index.addAnswer(splitInstance(accumline, 6));
 					}

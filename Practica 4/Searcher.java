@@ -33,6 +33,7 @@ public class Searcher{
 		Directory dir = FSDirectory.open(Paths.get(path));
 	 	IndexReader reader = DirectoryReader.open(dir);
 		searcher = new IndexSearcher(reader);	
+
 		clauses = new ArrayList<BooleanClause>();
 		order = new ArrayList<SortField>();
 		lastclauses = new ArrayList<BooleanClause>();
@@ -111,9 +112,12 @@ public class Searcher{
 		}else if(mode==2){
 			sf = new SortField("Date",SortField.Type.STRING,isDescendent);
 			order.add(sf);
+		}else if(mode==3){
+			sf = new SortField("Responses_sort",SortField.Type.LONG,isDescendent);
+			order.add(sf);
 		}else{
-
-		}	
+			sf = new SortField("TopVotedResponse",SortField.Type.LONG,isDescendent);
+		}
 	}
 
 	// if no clauses are given, all the questions are returned
