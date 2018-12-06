@@ -171,11 +171,25 @@ public class SearchInterface{
 		searcher.addOrder(mode,descendent);
 	}
 
+	public void addIsNotAnswered(){
+		String clause = "Show only not answered questions.";
+
+		order.add(clause);
+		searcher.addIsNotAnswered();
+	}
+
+	public void addFacet(String fac){
+		String clause = "Only questions marked with category " + fac + ".";
+
+		clauses.add(clause);
+		searcher.addFacet(fac);
+	}
+
 	public void executeSearch(){
 		try{
 			lastclauses.addAll(clauses);
 			lastfilters.addAll(filters);
-			lastorder = order;
+			lastorder.addAll(order);
 			clauses.clear();
 			filters.clear();
 			order.clear();
@@ -230,10 +244,11 @@ public class SearchInterface{
 									"  [3] - Add a word restriction.\n" +
 									"  [4] - Add a range of votes.\n" +
 									"  [5] - Add an order of relevance.\n"+
-									"  [6] - Add an answer restriction."
+									"  [6] - Add an answer restriction.\n"+
+									"  [7] - Add a category."
 		);
 		if(!first){
-			System.out.println("  [7] - Charge last restrictions.");
+			System.out.println("  [8] - Charge last restrictions.");
 		}
 		int res = input.nextInt();
 
@@ -269,7 +284,13 @@ public class SearchInterface{
 			}
 			requestAnswerRestriction();
 			requestClause(first);
-		}else if(res == 7 && !first){
+		}else if(res == 7){
+			if(!first){
+				resetSearch();
+			}
+			requestFacet();
+			requestClause(first);
+		}else if(res == 8 && !first){
 			redoSearch();
 			requestClause(true);
 		}else{
@@ -448,13 +469,13 @@ public class SearchInterface{
 	public void requestAnswerRestriction(){
 		Scanner input = new Scanner(System.in);
 		System.out.println("\nSelect the restriction type on the answer:\n" +
-									"  [1] - Show only with or without answer.\n" +
+									"  [1] - Show only without answer.\n" +
 									"  [2] - Order by the top votes of the answer.\n"
 		);
 		int res = input.nextInt();
 
 		if(res==1){
-			requestIsAnswered();
+			addIsNotAnswered();
 		}else if(res == 2){
 			requestOrderSide(4);
 		}else{
@@ -463,9 +484,14 @@ public class SearchInterface{
 		}
 	}
 
-	public void requestIsAnswered(){
+	public void requestFacet(){
+		Scanner input = new Scanner(System.in);
+		System.out.println("\nPlease enter the category:\n");
+		String res = input.nextLine();
 
-
+		if(res!=""){
+			addFacet(res);
+		}
 	}
 
 

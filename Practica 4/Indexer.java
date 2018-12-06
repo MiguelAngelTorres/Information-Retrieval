@@ -7,9 +7,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.lang.Long;
+import java.lang.Integer;
 
 import static java.lang.Math.toIntExact;
 
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.store.Directory;
@@ -45,22 +47,22 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.TermQuery;
 
+import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyWriter;
+import org.apache.lucene.facet.FacetsConfig;
+import org.apache.lucene.facet.FacetField;
+
 public class Indexer{
-	String[] indexPath = {"./indexes/Question","./indexes/Answer"};
+	String[] indexPath = {"./indexes/Question","./indexes/Answer","./indexes/Tags"};
 	String[] docPath = {"./source/Questions.csv", "./source/Answers.csv", "./source/Tags.csv"};
 	boolean create = true;
 	private Reader reader = new Reader();
-	private IndexWriter indexQuestionWriter, indexAnswerWriter ;
-	public IndexSearcher searcherAns;
+	private IndexWriter indexQuestionWriter, indexAnswerWriter, indexTagsWriter ;
+	private DirectoryTaxonomyWriter taxoWriter;
+	public IndexSearcher searcherAns, searcherTags;
+	public FacetsConfig fconfig = new FacetsConfig();
 
 	Indexer(){
-		try{
-			Directory dir = FSDirectory.open(Paths.get(indexPath[1]));
-	 		IndexReader reader = DirectoryReader.open(dir);		
-			searcherAns = new IndexSearcher(reader);
-		} catch( IOException e ){
-			System.out.println("Error while open the searcher of Answer: " + e.getMessage());
-		}		
+		
 
 	}
 
@@ -71,11 +73,11 @@ public class Indexer{
 		// Create an analyzer per field, and set default as WhitespaceAnalyzer
 		PerFieldAnalyzerWrapper analyzerQuestion = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerSetQuestion());
 		PerFieldAnalyzerWrapper analyzerAnswer = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerSetAnswer());
-
+		PerFieldAnalyzerWrapper analyzerTag = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerSetTags());
 		Indexer baseline = new Indexer() ;
 
 		try{
-			baseline.configureIndex (analyzerQuestion, analyzerAnswer, similarity);
+			baseline.configureIndex (analyzerQuestion, analyzerAnswer, analyzerTag, similarity);
 		}catch( IOException e ){
 			System.out.println("Error configuring the index.");
 		}		
@@ -87,44 +89,82 @@ public class Indexer{
 	public static Map<String, Analyzer> analyzerSetQuestion(){
 		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
 		res.put("Title", new WhitespaceAnalyzer());
-
+		res.put("TopVotedResponse", new KeywordAnalyzer());
 
 		return res;
 	}
 	public static Map<String, Analyzer> analyzerSetAnswer(){
 		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
 		res.put("Mark", new KeywordAnalyzer());
+
+		return res;
+	}
+	public static Map<String, Analyzer> analyzerSetTags(){
+		Map<String, Analyzer> res = new HashMap<String, Analyzer>();
+		res.put("Tag", new KeywordAnalyzer());
+
 		return res;
 	}
 
 
-	public void configureIndex(Analyzer analyzerQuestion, Analyzer analyzerAnswer, Similarity similarity) throws IOException {
+	public void configureIndex(Analyzer analyzerQuestion, Analyzer analyzerAnswer, Analyzer analyzerTag, Similarity similarity) throws IOException {
 		IndexWriterConfig iwcQ = new IndexWriterConfig (analyzerQuestion);
 		iwcQ.setSimilarity (similarity);
 		
 		IndexWriterConfig iwcA = new IndexWriterConfig (analyzerAnswer);
 		iwcA.setSimilarity (similarity);
 
+		IndexWriterConfig iwcT = new IndexWriterConfig (analyzerTag);
+		iwcT.setSimilarity (similarity);
+
 		if(create){
 			iwcQ.setOpenMode (IndexWriterConfig.OpenMode.CREATE);
 			iwcA.setOpenMode (IndexWriterConfig.OpenMode.CREATE);
+			iwcT.setOpenMode (IndexWriterConfig.OpenMode.CREATE);
 		}else{
 			iwcQ.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND ) ;
 			iwcA.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND ) ;
+			iwcT.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND ) ;
 		}
 
 		Directory dir = FSDirectory.open(Paths.get(indexPath[0]));	
 		indexQuestionWriter = new IndexWriter(dir,iwcQ);
 		dir = FSDirectory.open(Paths.get(indexPath[1]));	
 		indexAnswerWriter = new IndexWriter(dir,iwcA);
+		dir = FSDirectory.open(Paths.get(indexPath[2]));	
+		indexTagsWriter = new IndexWriter(dir,iwcT);
+
+		FSDirectory taxoDir = FSDirectory.open(Paths.get("facets"));
+		fconfig.setMultiValued("Tag", true);
+		taxoWriter = new DirectoryTaxonomyWriter(taxoDir);
 	}
 
-
+	
 	public void indexDocs (){
 		try{
 			reader.read(docPath[1],"Answers",this);
+
 		}catch(IOException e){
 			System.out.println(e.getMessage());
+		}
+
+		try{
+			reader.read(docPath[2],"Tags",this);
+
+		}catch(IOException e){
+			System.out.println(e.getMessage());
+		}
+
+		try{
+			Directory dir = FSDirectory.open(Paths.get(indexPath[1]));
+	 		IndexReader reader = DirectoryReader.open(dir);		
+			searcherAns = new IndexSearcher(reader);
+
+			dir = FSDirectory.open(Paths.get(indexPath[2]));
+	 		reader = DirectoryReader.open(dir);		
+			searcherTags = new IndexSearcher(reader);
+		} catch( IOException e ){
+			System.out.println("Error while open the searcherers: " + e.getMessage());
 		}
 
 		try{
@@ -133,12 +173,6 @@ public class Indexer{
 			System.out.println(e.getMessage());
 		}
 
-
-		/*try{
-			reader.read(docPath[2],"Tags",this);
-		}catch(IOException e){
-			System.out.println(e.getMessage());
-		}*/
 	}
 
 
@@ -167,14 +201,31 @@ public class Indexer{
 		}
 		for(ScoreDoc sd : tdocs.scoreDocs){
 			Document d = searcherAns.doc(sd.doc);
-			int votes = Integer.parseInt(d.get("Mark"));		
+			int votes = d.getField("Mark_store").numericValue().intValue();		
 			if(votes > topVotes){
 				topVotes = votes;
 			}
 		}
+
 		doc.add(new IntPoint("Responses", toIntExact(responses)));
 		doc.add(new NumericDocValuesField("Responses_sort", responses));
-		doc.add(new NumericDocValuesField("TopVotedResponse", topVotes));
+		doc.add(new NumericDocValuesField("TopVotedResponse", (long) topVotes));
+
+
+		// Store tags
+		q = IntPoint.newExactQuery("ID_store", valor);
+		bc = new BooleanClause(q,BooleanClause.Occur.MUST);
+		bqbuilder = new BooleanQuery.Builder();
+		bqbuilder.add(bc);
+		bq = bqbuilder.build();
+		tdocs = searcherTags.search(bq,50);
+
+		for(ScoreDoc sd : tdocs.scoreDocs){
+			Document d = searcherAns.doc(sd.doc);
+			String tag = d.get("Tag");		
+			doc.add(new FacetField ("Tag", tag));
+		}
+
 
 		// Store body on Lucene doc
 		doc.add(new TextField( "Body", question[5], Store.YES));
@@ -195,7 +246,7 @@ public class Indexer{
 
 		// Insert doc in Index
 		try{
-			indexQuestionWriter.addDocument(doc);
+			indexQuestionWriter.addDocument(fconfig.build(taxoWriter, doc));
 		}catch( IOException e ){
 			System.out.println("Error adding document to index.");
 		}	
@@ -217,9 +268,10 @@ public class Indexer{
 		doc.add(new TextField( "Body", answer[6], Store.YES));
 
 		// Store mark
-		doc.add(new TextField( "Mark", answer[4], Store.YES));
-		//doc.add ( new IntPoint("Mark",Integer.decode(answer[4])));
-		//doc.add(new StoredField("Mark", Integer.decode(answer[4])));
+		//System.out.println(answer[4]);
+		//doc.add(new TextField("Mark", answer[4], Store.YES));
+		doc.add ( new IntPoint("Mark",Integer.decode(answer[4])));
+		doc.add(new StoredField("Mark_store", Integer.decode(answer[4])));
 
 		// Store accepted 0(No)/1(Yes)
 		valor = answer[5] == "FALSE" ? 0 : 1;
@@ -238,8 +290,25 @@ public class Indexer{
 	}
 
 
-	public void addTag(String[] cadena){
 
+
+	public void addTag(String[] cadena){
+		Document doc = new Document ();
+			 
+		Integer valor = Integer.decode(cadena[0]);
+		// Store idQuestion on Lucene doc
+		doc.add ( new IntPoint("ID",valor));
+		doc.add ( new StoredField("ID_store", valor));
+
+		// Store body on Lucene doc
+		doc.add(new TextField( "Tag", cadena[1], Store.YES));
+
+		// Insert doc in Index
+		try{
+			indexTagsWriter.addDocument(doc);
+		}catch( IOException e ){
+			System.out.println("Error adding document to index.");
+		}
 	}
 
 
