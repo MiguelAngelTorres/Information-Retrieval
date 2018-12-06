@@ -12,4 +12,5 @@ For the text extracted in Práctica 2, test multiple Lucene's analyzers comparin
 
 ## Práctica 4 (Lucene, a complete Stack Overflow search engine)
 Given a set of questions, answers and tags from Stack Overflow (https://www.kaggle.com/stackoverflow/rquestions) we build a Lucene Index to search over them. It was thought for being a console like program, but an user inteface could be developed (not the aim of this subject).
-For execute, first execute 'ejecutarIndexer.sh' for creating the indexes. Note that some directories should be created before (watch Indexer.java for change them). Then, the searcher can be used by executing 'ejecutarSearcher.sh'. A friendly interface will be shown where you can prepare multiple clauses questions and throw them when the question is finished.
+
+To execute, first execute 'ejecutarIndexer.sh' for creating the indexes. Note that some directories should be created before (watch Indexer.java for change them). Then, the searcher can be used by executing 'ejecutarSearcher.sh'. A friendly interface will be shown where you can prepare multiple clauses questions and throw them when the question is finished.
