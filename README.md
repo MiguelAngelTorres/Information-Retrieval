@@ -1,5 +1,5 @@
 # Information-Retrieval
-Work for the subject Information-Retrieval (UGR)
+Work for the subject Information-Retrieval (Recuperación de Información) at Universidad de Granada (UGR) 
 
 ## Práctica 1
 Look for information about some topics we will work with in the subject. Report made with LaTex.
